@@ -20,32 +20,33 @@ app.appendChild(canvas);
 
 // Allow the user to draw on the canvas using their mouse.
 let isDrawing = false;
-let x = 0;
-let y = 0;
+let currentLine: Array<{ x: number; y: number }> = [];
+const lines: Array<Array<{ x: number; y: number }>> = [];
+const redoStack: Array<Array<{ x: number; y: number }>> = [];
+
 const context = canvas.getContext("2d");
 if (!context) {
     throw new Error("Failed to get 2D context from canvas");
-  }
+}
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
-  x = e.offsetX;
-  y = e.offsetY;
+  currentLine = [{ x: e.offsetX, y: e.offsetY }];
   isDrawing = true;
+  redoStack.length = 0;
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
-    x = e.offsetX;
-    y = e.offsetY;
+    currentLine.push({ x: e.offsetX, y: e.offsetY });
+    drawingChangedEvent();
   }
 });
 
-app.addEventListener("mouseup", (e: MouseEvent) => {
+canvas.addEventListener("mouseup", (_e: MouseEvent) => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
-    x = 0;
-    y = 0;
+    lines.push(currentLine);
+    currentLine = [];
+    drawingChangedEvent();
     isDrawing = false;
   }
 });
@@ -73,9 +74,61 @@ clearButton.classList.add("clearButton");
 app.appendChild(clearButton);
 
 clearButton.addEventListener("click", () => {
-    clearCanvas(context);
+  lines.length = 0;
+  redoStack.length = 0;
+  drawingChangedEvent();
 });
 
 function clearCanvas(ctx: CanvasRenderingContext2D): void {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
+//Display list and observer
+canvas.addEventListener("drawing-changed", () => {
+  clearCanvas(context);
+  reDraw(context);
+});
+
+function drawingChangedEvent() {
+  const event = new Event("drawing-changed");
+  canvas.dispatchEvent(event);
+}
+
+function reDraw(ctx: CanvasRenderingContext2D) {
+  lines.forEach((line) => {
+    for (let i = 1; i < line.length; i++) {
+      drawLine(ctx, line[i - 1].x, line[i - 1].y, line[i].x, line[i].y);
+    }
+  });
+}
+
+// undo/redo system
+const undoButton = document.createElement("button");
+undoButton.innerText = "undo";
+undoButton.classList.add("undoButton");
+app.appendChild(undoButton);
+
+undoButton.addEventListener("click", () => {
+  if (lines.length > 0) {
+      const lastLine = lines.pop();
+      if (lastLine) {
+          redoStack.push(lastLine);
+          drawingChangedEvent();
+      }
+  }
+});
+
+const redoButton = document.createElement("button");
+redoButton.innerText = "redo";
+redoButton.classList.add("redoButton");
+app.appendChild(redoButton);
+
+redoButton.addEventListener("click", () => {
+  if (redoStack.length > 0) {
+      const lastRedo = redoStack.pop();
+      if (lastRedo) {
+          lines.push(lastRedo);
+          drawingChangedEvent();
+      }
+  }
+});
