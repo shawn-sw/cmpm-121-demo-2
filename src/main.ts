@@ -83,7 +83,7 @@ function clearCanvas(ctx: CanvasRenderingContext2D): void {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-//Display list and observer
+// Step 3: Display list and observer
 canvas.addEventListener("drawing-changed", () => {
   clearCanvas(context);
   reDraw(context);
@@ -102,7 +102,7 @@ function reDraw(ctx: CanvasRenderingContext2D) {
   });
 }
 
-// undo/redo system
+//Step 4: Undo/redo system
 const undoButton = document.createElement("button");
 undoButton.innerText = "undo";
 undoButton.classList.add("undoButton");
