@@ -1,5 +1,5 @@
 import "./style.css";
-11
+
 // ===========================
 // Global Constants and Variables
 // ===========================
@@ -181,10 +181,16 @@ function renderStickers() {
   newStickerButton.addEventListener("click", () => {
 
     const sticker = prompt("Enter a new sticker character：", "Emoji");
-    if (sticker) {
-      stickers.push(sticker); 
-      renderStickers(); 
+    if (!sticker || sticker.trim() === "") {
+      alert("Sticker cannot be empty. Please enter a valid character.");
+      return;
     }
+    if (sticker.length > 2) {
+      alert("Sticker must be a single character or emoji.");
+      return;
+    }
+    stickers.push(sticker.trim());
+    renderStickers();
   });
   
   stickers.forEach((sticker) => {
